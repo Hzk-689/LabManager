@@ -1,39 +1,35 @@
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import current_app
 
 
 class User(db.Model):
     """用户表 - 管理系统用户账户"""
     __tablename__ = 'users'
 
-    # 基础字段
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), default='student', nullable=False)  # student, admin
+    role = db.Column(db.String(20), default='student', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 关系1：用户发起的预约（作为申请人）
-    # 明确指定使用 Reservation.user_id 外键
+    # 关系：用户发起的预约
     reservations_as_applicant = db.relationship(
         'Reservation',
-        foreign_keys='[Reservation.user_id]',
+        foreign_keys='Reservation.user_id',
         backref='applicant_user',
         lazy='dynamic',
-        cascade='all, delete-orphan',
-        primaryjoin='User.id == Reservation.user_id'  # 明确指定连接条件
+        cascade='all, delete-orphan'
     )
 
-    # 关系2：用户审核的预约（作为审核人）
-    # 明确指定使用 Reservation.reviewed_by 外键
+    # 关系：用户审核的预约
     reservations_as_reviewer = db.relationship(
         'Reservation',
-        foreign_keys='[Reservation.reviewed_by]',
+        foreign_keys='Reservation.reviewed_by',
         backref='reviewer_user',
-        lazy='dynamic',
-        primaryjoin='User.id == Reservation.reviewed_by'  # 明确指定连接条件
+        lazy='dynamic'
     )
 
     def __repr__(self):
@@ -48,7 +44,29 @@ class User(db.Model):
     def is_admin(self):
         return self.role in ['admin', 'super']
 
+    def generate_auth_token(self, expires_in=3600):
+        """生成JWT令牌"""
+        from app.auth import generate_token
+        return generate_token(self.id, expires_in)
 
+    @staticmethod
+    def verify_auth_token(token):
+        """验证JWT令牌并返回用户对象"""
+        from app.auth import verify_token
+        user_id = verify_token(token)
+        if user_id is None:
+            return None
+        return User.query.get(user_id)
+
+    def to_dict(self):
+        """将用户信息转为字典"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 class Device(db.Model):
     """实验室设备表"""
     __tablename__ = 'devices'

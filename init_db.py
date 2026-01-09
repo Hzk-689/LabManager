@@ -75,4 +75,4 @@ with app.app_context():
     else:
         print("❌ 数据库文件未创建")
 
-    print("=" * 60)0
+    print("=" * 60)
