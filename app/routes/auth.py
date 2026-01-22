@@ -69,7 +69,7 @@ def login():
         return jsonify({'error': '用户名或密码错误'}), 401
 
     # 生成令牌
-    token = generate_token(user.id)
+    token = generate_token(user.id, user.username, user.role)
 
     return jsonify({
         'success': True,

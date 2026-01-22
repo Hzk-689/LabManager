@@ -1,0 +1,14 @@
+# 在frontend/public目录创建test.html
+echo '<!DOCTYPE html>
+<html>
+<head>
+    <title>Vite测试页</title>
+</head>
+<body>
+    <h1>Vite服务器工作正常！</h1>
+    <p>当前时间: <span id="time"></span></p>
+    <script>
+        document.getElementById("time").textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>' > public/test.html
